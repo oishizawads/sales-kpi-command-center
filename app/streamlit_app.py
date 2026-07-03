@@ -162,7 +162,9 @@ def _chart(fig: go.Figure, key: str) -> None:
 
 # ---------- メイン ----------
 
-st.title("📊 Sales KPI Command Center")
+from src.brand import apply_brand, hero
+apply_brand(st)
+hero(st, "Analytics Dashboard", "Sales KPI Command Center", "SaaS の主要 KPI を一覧し、異常値と次の確認ポイントを表示します。")
 st.caption("Synthetic SaaS KPI dashboard — data is generated, not from any real company.")
 
 if df is None or df.empty:
