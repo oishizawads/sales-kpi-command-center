@@ -17,6 +17,15 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.alerts import DEFAULT_THRESHOLDS, evaluate_alerts
+from src.brand import (
+    apply_brand,
+    footer_backlink,
+    hero,
+    plotly_template,
+    set_plotly_theme,
+    sidebar_header,
+    show_table,
+)
 from src.data import REQUIRED_COLUMNS, generate_synthetic_data, validate_dataframe
 from src.funnel import compute_funnel, compute_funnel_table
 from src.metrics import compute_churn_rate, compute_mrr_trend, compute_summary
@@ -27,6 +36,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+apply_brand(st)
+set_plotly_theme()
 
 SEVERITY_STYLE = {
     "CRITICAL": ("🔴", "critical"),
@@ -75,7 +86,7 @@ def _thresholds_to_tuple(th: dict) -> tuple:
 # ---------- サイドバー ----------
 
 with st.sidebar:
-    st.header("⚙️ Data & Settings")
+    sidebar_header(st, "Sales KPI Command Center")
     data_mode = st.radio("Data source", ["Synthetic (sample)", "Upload CSV"], index=0)
 
     df: pd.DataFrame
@@ -144,6 +155,7 @@ def _empty_state(msg: str) -> None:
 
 
 def _fig_base(fig: go.Figure, title: str, y_title: str) -> go.Figure:
+    fig.update_layout(**plotly_template())
     fig.update_layout(
         title=title,
         xaxis_title="Month",
@@ -162,10 +174,13 @@ def _chart(fig: go.Figure, key: str) -> None:
 
 # ---------- メイン ----------
 
-from src.brand import apply_brand, hero
-apply_brand(st)
-hero(st, "Analytics Dashboard", "Sales KPI Command Center", "SaaS の主要 KPI を一覧し、異常値と次の確認ポイントを表示します。")
-st.caption("Synthetic SaaS KPI dashboard — data is generated, not from any real company.")
+hero(
+    st,
+    "ANALYTICS DASHBOARD",
+    "Sales KPI Command Center",
+    "SaaS の主要 KPI を一覧し、異常値と次の確認ポイントを表示します。",
+    chips=["Python", "Plotly", "Pandas", "SaaS KPI"],
+)
 
 if df is None or df.empty:
     _empty_state(
@@ -217,6 +232,7 @@ with tab_funnel:
             stage_names = list(funnel["stages"].keys())
             stage_vals = list(funnel["stages"].values())
             fig = go.Figure(go.Funnel(y=stage_names, x=stage_vals, textinfo="value+percent initial"))
+            fig.update_layout(**plotly_template())
             fig.update_layout(height=380, margin=dict(l=10, r=10, t=30, b=10))
             _chart(fig, "funnel_chart")
         else:
@@ -232,7 +248,7 @@ with tab_funnel:
 
     st.markdown("---")
     st.subheader("Monthly funnel breakdown")
-    st.dataframe(funnel_table, width="stretch", hide_index=True)
+    show_table(st, funnel_table)
 
 with tab_revenue:
     st.subheader("MRR trend & MoM growth")
@@ -290,10 +306,13 @@ with tab_alerts:
             category_orders={"severity": ["CRITICAL", "WARNING", "INFO"]},
             labels={"month": "Month", "kpi": "KPI"},
         )
+        fig.update_layout(**plotly_template())
         fig.update_layout(height=320, margin=dict(l=10, r=10, t=30, b=10))
         _chart(fig, "alert_timeline")
     else:
         st.write("—")
 
 with st.expander("Data preview", expanded=False):
-    st.dataframe(df.sort_values("month"), width="stretch", hide_index=True)
+    show_table(st, df.sort_values("month"))
+
+footer_backlink(st, repo="sales-kpi-command-center")
